@@ -1,8 +1,19 @@
 SHELL := /bin/bash
 
+BINARY_NAME ?= kubelock
+DOCKER_REGISTRY ?= mintel
+DOCKER_IMAGE = ${DOCKER_REGISTRY}/${BINARY_NAME}
+
+VERSION ?= $(shell echo `git symbolic-ref -q --short HEAD || git describe --tags --exact-match` | tr '[/]' '-')
+DOCKER_TAG ?= ${VERSION}
+
 go-build: kubelock
 
-docker-build: go-build minikube-check
+docker:
+	@echo "building docker image"
+	docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} .
+
+docker-minikube: minikube-check
 	@echo "building docker image"
 	@eval $$(minikube docker-env); \
 	docker build -t kubelock-example -f Dockerfile-dev .
@@ -21,7 +32,7 @@ clean: minikube-check
 		kubectl delete ns kubelock >/dev/null; \
 	fi
 
-minikube: go-build minikube-check clean docker-build
+minikube: minikube-check clean docker-minikube
 	@echo "applying manifests"
 	@kubectl create ns kubelock >/dev/null; \
 	kubectl apply -k examples/init-container/kustomize >/dev/null
