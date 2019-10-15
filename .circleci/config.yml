@@ -1,14 +1,18 @@
 version: 2.1
 
 jobs:
-  build:
+  integration-tests:
     machine:
       image: circleci/classic:201808-01
     environment:
-      KIND_VERSION: 0.5.1
-      KIND_CHECKSUM: 9a64f1774cdf24dad5f92e1299058b371c4e3f09d2f9eb281e91ed0777bd1e13
+      DOCKER_TAG: ci
       K8S_VERSION: v1.13.10
       K8S_KIND_VERSION: v1.13.10@sha256:2f5f882a6d0527a2284d29042f3a6a07402e1699d792d0d5a9b9a48ef155fa2a
+      KIND_VERSION: 0.5.1
+      KIND_CHECKSUM: 9a64f1774cdf24dad5f92e1299058b371c4e3f09d2f9eb281e91ed0777bd1e13
+      # KUBECONFIG value is the default set by kind after a cluster is created
+      # (the same as reported by kind get kubeconfig-path --name="kind")
+      KUBECONFIG: /home/circleci/.kube/kind-config-kind
     steps:
       - run:
           name: Prepare Kind
@@ -44,7 +48,7 @@ jobs:
             make docker
           no_output_timeout: 30m
       - run:
-          name: Wait for k8s
+          name: Wait for Kind
           command: |
             timeout 180s bash \<<EOT
               set -o pipefail

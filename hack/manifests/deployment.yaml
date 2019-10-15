@@ -1,0 +1,30 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: example-app
+  namespace: kubelock
+  labels:
+    app: example-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: example-app
+  template:
+    metadata:
+      labels:
+        app: example-app
+    spec:
+      serviceAccountName: kubelock
+      containers:
+      - name: nginx
+        image: nginx:1.17.4
+        ports:
+        - containerPort: 80
+      initContainers:
+      - name: kubelock
+        image: mintel/kubelock:ci
+        imagePullPolicy: Never
+        command: ["kubelock", "--name", "example-app", "--namespace", "kubelock"]
+        args: ["sleep", "10"]

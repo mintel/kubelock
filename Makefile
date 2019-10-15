@@ -10,8 +10,10 @@ DOCKER_TAG ?= ${VERSION}
 go-build: kubelock
 
 docker:
-	@echo "building docker image"
 	docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} .
+
+docker-ci:
+	docker build -t mintel/kubelock:ci --target=builder .
 
 docker-minikube: minikube-check
 	@echo "building docker image"
