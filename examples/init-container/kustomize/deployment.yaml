@@ -1,0 +1,30 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: example-app
+  labels:
+    app: example-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: example-app
+  template:
+    metadata:
+      labels:
+        app: example-app
+    spec:
+      serviceAccountName: kubelock
+      containers:
+      - name: example-app
+        image: kubelock-example
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 80
+      initContainers:
+      - name: database-migrations
+        image: kubelock-example
+        imagePullPolicy: Never
+        command: ["kubelock", "--name", "example-app", "--namespace", "kubelock"]
+        args: ["sh", "db-migrations.sh"]
