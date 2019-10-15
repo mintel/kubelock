@@ -71,7 +71,7 @@ function check_terminated {
 }
 
 refresh_annotation_vars
-while [[ $leaderTransitions -lt $TEST_REPLICAS ]]; do
+while true; do
 
   echo "holderIdentity: $holderIdentity"
   echo "leaseDurationSeconds: $leaseDurationSeconds"
@@ -88,18 +88,19 @@ while [[ $leaderTransitions -lt $TEST_REPLICAS ]]; do
       echo "allStatuses: $allStatuses"
       sleep 1
     done
+    holderStatus=""
+  fi
+
+  echo "---"
+
+  if [[ $leaderTransitions -eq $TEST_REPLICAS ]]; then
+    break
   fi
 
   sleep 1
   refresh_annotation_vars
-  echo "---"
 
 done
-
-# If leader transitions == 1
-# Only one can be terminated
-# Must be the correct one
-# Only one can be
 
 # Clean up
 
