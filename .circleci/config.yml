@@ -1,7 +1,7 @@
 version: 2.1
 
 jobs:
-  test:
+  integration-tests:
     machine:
       image: circleci/classic:201808-01
     environment:
@@ -66,18 +66,31 @@ jobs:
           kubectl rollout status -n kube-system daemonset kube-proxy --timeout=180s
           kubectl rollout status -n kube-system deployment coredns --timeout=180s
     - run:
+        name: Run Integration Tests
+        command: |
+          kind load docker-image mintel/kubelock:ci --loglevel debug
+          hack/test-kubelock-kind.sh
+    - persist_to_workspace:
+        root: $HOME/.kube
+        paths: config
+  unit-tests:
+    docker:
+    - image: circleci/golang:1.12.9
+    steps:
+    - attach_workspace:
+        at: $HOME/.kube
+    - checkout
+    - run:
         name: Run Unit Tests
         command: |
           make test
     - store_artifacts:
         path: /tmp/artifacts
-    - run:
-        name: Run Integration Tests
-        command: |
-          kind load docker-image mintel/kubelock:ci --loglevel debug
-          hack/test-kubelock-kind.sh
 workflows:
   version: 2
   ci:
     jobs:
-    - test
+    - integration-tests
+    - unit-tests:
+        requires:
+        - integration-tests
