@@ -70,3 +70,8 @@ jobs:
           command: |
             kind load docker-image mintel/kubelock:ci --loglevel debug
             hack/test-kubelock-kind.sh
+workflows:
+  version: 2
+  ci:
+    jobs:
+    - build
