@@ -1,0 +1,6 @@
+FROM nginx
+
+COPY ./kubelock /usr/local/bin/kubelock
+COPY ./examples/init-container/db-migrations.sh /app/db-migrations.sh
+
+WORKDIR /app
