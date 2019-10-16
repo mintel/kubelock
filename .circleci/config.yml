@@ -1,6 +1,19 @@
 version: 2.1
 
 jobs:
+  unit-tests:
+    docker:
+    - image: circleci/golang:1.12.9
+    parallelism: 2
+    steps:
+    - checkout
+    - run:
+        name: Run Unit Tests
+        command: |
+          make test
+    - store_artifacts:
+        path: /tmp/artifacts
+
   integration-tests:
     machine:
       image: circleci/classic:201808-01
@@ -14,64 +27,65 @@ jobs:
       # (the same as reported by kind get kubeconfig-path --name="kind")
       KUBECONFIG: /home/circleci/.kube/kind-config-kind
     steps:
-      - run:
-          name: Prepare Kind
-          command: |
-            curl -Lo kind https://github.com/kubernetes-sigs/kind/releases/download/v${KIND_VERSION}/kind-linux-amd64 && chmod +x kind && sudo mv kind /usr/local/bin/
-            cd /usr/local/bin
-            echo "${KIND_CHECKSUM}  kind" | sha256sum -c
-            cat > /tmp/kind-config.yaml \<<EOF
-            kind: Cluster
-            apiVersion: kind.sigs.k8s.io/v1alpha3
-            networking:
-              apiServerAddress: 0.0.0.0
-            nodes:
-            - role: control-plane
-              image: kindest/node:${K8S_KIND_VERSION}
-            - role: worker
-              image: kindest/node:${K8S_KIND_VERSION}
-            EOF
-      - run:
-          name: Start Kind
-          background: true
-          command: |
-            kind create cluster --config /tmp/kind-config.yaml
-      - run:
-          name: Set Up Kubectl
-          command: |
-            curl -Lo kubectl https://storage.googleapis.com/kubernetes-release/release/${K8S_VERSION}/bin/linux/amd64/kubectl && chmod +x kubectl && sudo mv kubectl /usr/local/bin/
-            mkdir -p ${HOME}/.kube
-      - checkout
-      - run:
-          name: Build Docker Image
-          command: |
-            make docker-ci
-          no_output_timeout: 30m
-      - run:
-          name: Wait for Kind
-          command: |
-            timeout 180s bash \<<EOT
-              set -o pipefail
-              function is_ready()
-              {
-                kubectl get nodes -o json \
-                  | jq '.items[].status.conditions[] | select(.type=="Ready" and .status=="True")'
-              }
-              until is_ready
-              do
-                sleep 1
-              done
-            EOT
-            kubectl rollout status -n kube-system daemonset kindnet --timeout=180s
-            kubectl rollout status -n kube-system daemonset kube-proxy --timeout=180s
-            kubectl rollout status -n kube-system deployment coredns --timeout=180s
-      - run:
-          name: Run Integration Tests
-          command: |
-            kind load docker-image mintel/kubelock:ci --loglevel debug
-            hack/test-kubelock-kind.sh
+    - run:
+        name: Prepare Kind
+        command: |
+          curl -Lo kind https://github.com/kubernetes-sigs/kind/releases/download/v${KIND_VERSION}/kind-linux-amd64 && chmod +x kind && sudo mv kind /usr/local/bin/
+          cd /usr/local/bin
+          echo "${KIND_CHECKSUM}  kind" | sha256sum -c
+          cat > /tmp/kind-config.yaml \<<EOF
+          kind: Cluster
+          apiVersion: kind.sigs.k8s.io/v1alpha3
+          networking:
+            apiServerAddress: 0.0.0.0
+          nodes:
+          - role: control-plane
+            image: kindest/node:${K8S_KIND_VERSION}
+          - role: worker
+            image: kindest/node:${K8S_KIND_VERSION}
+          EOF
+    - run:
+        name: Start Kind
+        background: true
+        command: |
+          kind create cluster --config /tmp/kind-config.yaml
+    - run:
+        name: Set Up Kubectl
+        command: |
+          curl -Lo kubectl https://storage.googleapis.com/kubernetes-release/release/${K8S_VERSION}/bin/linux/amd64/kubectl && chmod +x kubectl && sudo mv kubectl /usr/local/bin/
+          mkdir -p ${HOME}/.kube
+    - checkout
+    - run:
+        name: Build Docker Image
+        command: |
+          make docker-ci
+        no_output_timeout: 30m
+    - run:
+        name: Wait for Kind
+        command: |
+          timeout 180s bash \<<EOT
+            set -o pipefail
+            function is_ready()
+            {
+              kubectl get nodes -o json \
+                | jq '.items[].status.conditions[] | select(.type=="Ready" and .status=="True")'
+            }
+            until is_ready
+            do
+              sleep 1
+            done
+          EOT
+          kubectl rollout status -n kube-system daemonset kindnet --timeout=180s
+          kubectl rollout status -n kube-system daemonset kube-proxy --timeout=180s
+          kubectl rollout status -n kube-system deployment coredns --timeout=180s
+    - run:
+        name: Run Integration Tests
+        command: |
+          kind load docker-image mintel/kubelock:ci --loglevel debug
+          hack/test-kubelock-kind.sh
 workflows:
   version: 2
   ci:
     jobs:
+    - unit-tests
     - integration-tests

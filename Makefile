@@ -7,6 +7,8 @@ DOCKER_IMAGE = ${DOCKER_REGISTRY}/${BINARY_NAME}
 VERSION ?= $(shell echo `git symbolic-ref -q --short HEAD || git describe --tags --exact-match` | tr '[/]' '-')
 DOCKER_TAG ?= ${VERSION}
 
+ARTIFACTS = /tmp/artifacts
+
 go-build: kubelock
 
 docker:
@@ -14,6 +16,14 @@ docker:
 
 docker-ci:
 	docker build -t mintel/kubelock:ci --target=builder .
+
+test:
+	@if [[ ! -d ${ARTIFACTS} ]]; then \
+		mkdir ${ARTIFACTS}; \
+	fi
+	go test -v -coverprofile=c.out
+	go tool cover -html=c.out -o coverage.html
+	mv coverage.html /tmp/artifacts
 
 docker-minikube: minikube-check
 	@echo "building docker image"
@@ -42,6 +52,3 @@ minikube: minikube-check clean docker-minikube
 kubelock : main.go
 	@echo "building go binary"
 	@GOOS=linux go build -o ./kubelock .
-
-test : minikube-check
-	@go test -cover
