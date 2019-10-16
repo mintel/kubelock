@@ -45,7 +45,7 @@ jobs:
       - run:
           name: Build Docker Image
           command: |
-            make docker
+            make docker-ci
           no_output_timeout: 30m
       - run:
           name: Wait for Kind
@@ -65,3 +65,8 @@ jobs:
             kubectl rollout status -n kube-system daemonset kindnet --timeout=180s
             kubectl rollout status -n kube-system daemonset kube-proxy --timeout=180s
             kubectl rollout status -n kube-system deployment coredns --timeout=180s
+      - run:
+          name: Run Integration Tests
+          command: |
+            kind load docker-image mintel/kubelock:ci --loglevel debug
+            hack/test-kubelock-kind.sh

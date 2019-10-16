@@ -27,4 +27,4 @@ spec:
         image: mintel/kubelock:ci
         imagePullPolicy: Never
         command: ["kubelock", "--name", "example-app", "--namespace", "kubelock"]
-        args: ["sleep", "10"]
+        args: ["sleep", "5"]
