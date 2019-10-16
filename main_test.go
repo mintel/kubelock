@@ -47,7 +47,7 @@ func TestProcessArgs(t *testing.T) {
 			t.Errorf("%s: Expected error, got no error", test.Name)
 		}
 		if err := processArgs(test.args); err != nil && !test.errExpected {
-			t.Errorf("%s: Expected no error, got error", test.Name)
+			t.Errorf("%v: Expected no error, got error: %v", test.Name, err)
 		}
 	}
 }
@@ -67,7 +67,7 @@ func TestKubeSetup(t *testing.T) {
 			t.Errorf("%s: Expected error, got no error", test.Name)
 		}
 		if _, err := kubeSetup(test.kubeconfig); err != nil && !test.errExpected {
-			t.Errorf("%s: Expected no error, got error", test.Name)
+			t.Errorf("%s: Expected no error, got error: %v", test.Name, err)
 		}
 	}
 }

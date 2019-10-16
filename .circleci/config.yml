@@ -1,20 +1,7 @@
 version: 2.1
 
 jobs:
-  unit-tests:
-    docker:
-    - image: circleci/golang:1.12.9
-    parallelism: 2
-    steps:
-    - checkout
-    - run:
-        name: Run Unit Tests
-        command: |
-          make test
-    - store_artifacts:
-        path: /tmp/artifacts
-
-  integration-tests:
+  test:
     machine:
       image: circleci/classic:201808-01
     environment:
@@ -79,6 +66,12 @@ jobs:
           kubectl rollout status -n kube-system daemonset kube-proxy --timeout=180s
           kubectl rollout status -n kube-system deployment coredns --timeout=180s
     - run:
+        name: Run Unit Tests
+        command: |
+          make test
+    - store_artifacts:
+        path: /tmp/artifacts
+    - run:
         name: Run Integration Tests
         command: |
           kind load docker-image mintel/kubelock:ci --loglevel debug
@@ -87,5 +80,4 @@ workflows:
   version: 2
   ci:
     jobs:
-    - unit-tests
-    - integration-tests
+    - test
