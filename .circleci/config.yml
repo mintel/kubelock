@@ -70,15 +70,19 @@ jobs:
         command: |
           kind load docker-image mintel/kubelock:ci --loglevel debug
           hack/test-kubelock-kind.sh
+    - run:
+        name: Copy kubeconfig file
+        command: cp /home/circleci/.kube/kind-config-kind /home/circleci/.kube/config
     - persist_to_workspace:
-        root: $HOME/.kube
-        paths: config
+        root: /home/circleci/.kube
+        paths:
+        - config
   unit-tests:
     docker:
     - image: circleci/golang:1.12.9
     steps:
     - attach_workspace:
-        at: $HOME/.kube
+        at: /home/circleci/.kube
     - checkout
     - run:
         name: Run Unit Tests
