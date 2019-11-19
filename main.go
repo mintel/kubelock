@@ -197,7 +197,7 @@ func getLeaderCallbacks(cmd *exec.Cmd, spErr *error, ctx context.Context, cancel
 					glog.V(1).Infof("kubelock received signal from OS: %v", s)
 					if !softKilled {
 						glog.V(1).Infof("attempting soft kill")
-						chTermTimeout, err = softKill(cmd, s, 90 * time.Second)
+						chTermTimeout, err = softKill(cmd, s, 90*time.Second)
 						if err != nil {
 							glog.Errorf("Error soft-killing process: %s", err)
 						}
