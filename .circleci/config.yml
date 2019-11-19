@@ -111,6 +111,7 @@ workflows:
   version: 2
   ci:
     jobs:
+    - golang-checks
     - integration-tests
     - unit-tests:
         requires:
