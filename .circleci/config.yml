@@ -1,16 +1,11 @@
 version: 2.1
 
 jobs:
-  golang-checks:
+  gofmt:
     docker:
     - image: circleci/golang
     steps:
     - checkout
-    - run:
-        name: gotestsum
-        command: |
-          set -x
-          gotestsum
     - run:
         name: gofmt
         command: |
@@ -111,7 +106,7 @@ workflows:
   version: 2
   ci:
     jobs:
-    - golang-checks
+    - gofmt
     - integration-tests
     - unit-tests:
         requires:
