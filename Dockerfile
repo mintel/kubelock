@@ -1,4 +1,4 @@
-FROM golang:1.12.9-alpine3.10 as builder
+FROM golang:1.16.4-alpine3.13 as builder
 
 RUN apk add --no-cache git jq
 

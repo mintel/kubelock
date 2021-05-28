@@ -91,7 +91,7 @@ jobs:
         - config
   unit-tests:
     docker:
-    - image: circleci/golang:1.12.9
+    - image: circleci/golang:1.16.2
     steps:
     - attach_workspace:
         at: /home/circleci/.kube
