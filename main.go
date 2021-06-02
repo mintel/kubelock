@@ -6,14 +6,15 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
-	"k8s.io/client-go/transport"
-	"k8s.io/klog"
 	"os"
 	"os/exec"
 	"os/signal"
 	"path"
 	"syscall"
 	"time"
+
+	"k8s.io/client-go/transport"
+	"k8s.io/klog"
 
 	"github.com/golang/glog"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
