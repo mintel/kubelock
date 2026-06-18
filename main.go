@@ -5,7 +5,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -43,18 +43,18 @@ var (
 func init() {
 	// The leaderelection library's logging is excessive so we use glog
 	// as our logging library and push klog output to /dev/null
-	klog.SetOutput(ioutil.Discard)
+	klog.SetOutput(io.Discard)
 
 	flag.Usage = func() {
 		fmt.Printf("Usage: %s [OPTIONS] COMMAND\n\n", basename)
-		fmt.Printf("A utility to create/remove locks on Endpoints in Kubernetes while running a shell command/script\n\n")
+		fmt.Printf("A utility to create/remove Lease locks in Kubernetes while running a shell command/script\n\n")
 		fmt.Printf("Options:\n")
 		flag.PrintDefaults()
 	}
 	flag.StringVar(&args.id, "id", os.Getenv("HOSTNAME"), "ID of instance vying for leadership")
 	flag.StringVar(&args.kubeconfig, "kubeconfig", "", "Absolute path to the kubeconfig file")
-	flag.StringVar(&args.lockName, "name", "example-app", "The lease lock endpoint name")
-	flag.StringVar(&args.lockNamespace, "namespace", "default", "The lease lock endpoint namespace")
+	flag.StringVar(&args.lockName, "name", "example-app", "The lease lock name")
+	flag.StringVar(&args.lockNamespace, "namespace", "default", "The lease lock namespace")
 	flag.DurationVar(&args.leaseDuration, "lease-duration", time.Second*15,
 		"How long the lock is held before another client will take over")
 	flag.DurationVar(&args.renewDeadline, "renew-deadline", time.Second*10,
@@ -95,9 +95,9 @@ func processArgs(flagArgs []string) error {
 }
 
 type KubeConfig struct {
-	config        *rest.Config
-	clientset     *clientset.Clientset
-	endpointsLock *resourcelock.EndpointsLock
+	config    *rest.Config
+	clientset *clientset.Clientset
+	leaseLock *resourcelock.LeaseLock
 }
 
 // buildConfig will build a config object for either running outside the cluster using the kubectl config
@@ -116,17 +116,14 @@ func kubeSetup(kcPath string) (kc *KubeConfig, err error) {
 		}
 	}
 
-	// Create the Clientset - used for querying the various API endpoints
 	kc.clientset = clientset.NewForConfigOrDie(kc.config)
 
-	// Create a resourcelock Interface for Endpoints objects since we will be placing the lock
-	// annotation on the Endpoints resource assigned to the Service.
-	kc.endpointsLock = &resourcelock.EndpointsLock{
-		EndpointsMeta: metav1.ObjectMeta{
+	kc.leaseLock = &resourcelock.LeaseLock{
+		LeaseMeta: metav1.ObjectMeta{
 			Name:      args.lockName,
 			Namespace: args.lockNamespace,
 		},
-		Client: kc.clientset.CoreV1(),
+		Client: kc.clientset.CoordinationV1(),
 		LockConfig: resourcelock.ResourceLockConfig{
 			Identity: args.id,
 		},
@@ -265,7 +262,7 @@ func main() {
 	// Start the leaderelection loop
 	glog.Infof("Attempting to get a lock on %s/%v", args.lockNamespace, args.lockName)
 	leaderelection.RunOrDie(ctx, leaderelection.LeaderElectionConfig{
-		Lock:            kc.endpointsLock,
+		Lock:            kc.leaseLock,
 		LeaseDuration:   args.leaseDuration,
 		RenewDeadline:   args.renewDeadline,
 		RetryPeriod:     args.retryPeriod,

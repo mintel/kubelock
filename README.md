@@ -9,19 +9,19 @@ This app uses Kubernetes' leader election functionality to create or remove a di
 ```
 Usage: kubelock [OPTIONS] COMMAND
 
-A utility to create/remove locks on Endpoints in Kubernetes while running a shell command/script
+A utility to create/remove Lease locks in Kubernetes while running a shell command/script
 
 Options:
   -id string
     	ID of instance vying for leadership (default is the pod's hostname)
   -kubeconfig string
-    	Absolute path to the kubeconfig file. Only set this if running out-of-cluster, otherwise it will create a config using the rights of the Service Account assigned to the Pods. You'll need a Service Account with "get", "list", "create" and "update" permissions to Endpoints resources in this case.
+    	Absolute path to the kubeconfig file. Only set this if running out-of-cluster, otherwise it will create a config using the rights of the Service Account assigned to the Pods. You'll need a Service Account with "get", "list", "create" and "update" permissions to Lease resources in this case.
   -lease-duration string
     	How long the lock is held before another client will take over (default "15s")
   -name string
-    	The lock endpoint name (default "example-app")
+    	The lease lock name (default "example-app")
   -namespace string
-    	The lock endpoint namespace (default "default")
+    	The lease lock namespace (default "default")
   -renew-deadline string
     	The duration that the acting master will retry refreshing leadership before giving up. (default "10s")
   -retry-period string
@@ -56,7 +56,7 @@ Install minikube and kubectl if you haven't already; start minikube.
   ./kubelock --kubeconfig ~/.kube/config --id 1 --name example-app --namespace default sleep 10
   ./kubelock --kubeconfig ~/.kube/config --id 1 --name example-app --namespace default sleep 10
   ```
-* This will start three processes which will all race to lock an `default/example-app` Endpoints object, sleep for 10 seconds then release the lock and exit.
+* This will start three processes which will all race to lock a `default/example-app` Lease object, sleep for 10 seconds then release the lock and exit.
 
 ### In-Cluster (minikube)
 

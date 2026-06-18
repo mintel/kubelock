@@ -7,17 +7,17 @@ EXITSTATUS=0
 
 THISDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
-function get_annotation {
-  kubectl -n kubelock get endpoints example-app -o json | jq -r '.metadata.annotations."control-plane.alpha.kubernetes.io/leader"'
+function get_lease {
+  kubectl -n kubelock get lease example-app -o json 2>/dev/null
 }
 
 function refresh_annotation_vars {
-  annotation=$(get_annotation)
-  holderIdentity=$(echo "${annotation}" | jq -r .holderIdentity)
-  leaseDurationSeconds=$(echo "${annotation}" | jq -r .leaseDurationSeconds)
-  acquireTime=$(echo "${annotation}" | jq -r .acquireTime)
-  renewTime=$(echo "${annotation}" | jq -r .renewTime)
-  leaderTransitions=$(echo "${annotation}" | jq -r .leaderTransitions)
+  lease=$(get_lease)
+  holderIdentity=$(echo "${lease}" | jq -r '.spec.holderIdentity // empty')
+  leaseDurationSeconds=$(echo "${lease}" | jq -r '.spec.leaseDurationSeconds')
+  acquireTime=$(echo "${lease}" | jq -r '.spec.acquireTime')
+  renewTime=$(echo "${lease}" | jq -r '.spec.renewTime')
+  leaderTransitions=$(echo "${lease}" | jq -r '.spec.leaseTransitions')
 }
 
 # Check that kubectl is configured with the right context
@@ -42,14 +42,16 @@ fi
 
 kubectl apply -f "${THISDIR}"/manifests
 
-# Wait for endpoint annotation
+# Wait for a leader to acquire the lease
 
-annotation=$(get_annotation)
-echo -n "INFO: waiting for annotation"
-while [[ $annotation == "null" ]]; do
+echo -n "INFO: waiting for lease holder"
+while true; do
+  holderIdentity=$(get_lease | jq -r '.spec.holderIdentity // empty')
+  if [[ -n "$holderIdentity" ]]; then
+    break
+  fi
   echo -n "."
   sleep 1
-  annotation=$(get_annotation)
 done
 echo
 

@@ -1,16 +1,14 @@
-FROM golang:1.16.4-alpine3.13 as builder
+FROM golang:1.26-alpine AS builder
 
 RUN apk add --no-cache git jq
 
 ENV GO111MODULE=on
 WORKDIR /app
-COPY go.mod .
-COPY go.sum .
+COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build . && \
-    mv kubelock /usr/local/bin/
+RUN CGO_ENABLED=0 GOOS=linux go build -o /usr/local/bin/kubelock .
 
 FROM scratch
 COPY --from=builder /usr/local/bin/kubelock /usr/local/bin/kubelock

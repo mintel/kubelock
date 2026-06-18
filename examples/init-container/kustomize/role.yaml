@@ -4,6 +4,6 @@ kind: Role
 metadata:
   name: kubelock
 rules:
-- apiGroups: [""]
-  resources: ["endpoints"]
+- apiGroups: ["coordination.k8s.io"]
+  resources: ["leases"]
   verbs: ["get", "list", "create", "update"]
